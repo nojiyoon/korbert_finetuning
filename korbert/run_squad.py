@@ -1041,8 +1041,8 @@ def get_final_text(pred_text, orig_text, do_lower_case):
         break
       pred_answer = pred_answer[1:]
     return pred_answer
-  if new_text in output_text:
-    output_text = refine_output(new_text, output_text)
+  if orig_text in output_text:
+    output_text = refine_output(orig_text, output_text)
   ####################################################
   return output_text
 
