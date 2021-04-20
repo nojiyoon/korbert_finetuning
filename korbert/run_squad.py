@@ -12,9 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Run KorBERT on KDinoQuAD for QA team"""
-# JAEHAK
-# 20210420
+"""Run BERT on SQuAD 1.1 and SQuAD 2.0."""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -25,9 +23,11 @@ import json
 import math
 import os
 import random
-from korbert import modeling
-from korbert import optimization
-from korbert import tokenization_morp as tokenization
+##########TO-DO 필요한 모듈을 import 해주세요############
+from bert import                                    #####
+from bert import                                    #####
+from bert import                                    #####
+#########################################################
 import six
 import tensorflow as tf
 
@@ -242,7 +242,9 @@ def read_squad_examples(input_file, is_training):
   examples = []
   for entry in input_data:
     for paragraph in entry["paragraphs"]:
-      paragraph_text = paragraph["context"]
+      ############TO-DO 채워주세요############
+      paragraph_text = 
+      ########################################
       doc_tokens = []
       char_to_word_offset = []
       prev_is_whitespace = True
@@ -260,8 +262,10 @@ def read_squad_examples(input_file, is_training):
         char_to_word_offset.append(len(doc_tokens) - 1)
 
       for qa in paragraph["qas"]:
-        qas_id = qa["id"]
-        question_text = qa["question"] 
+        ######TO-DO 채워주세요########
+        qas_id = 
+        question_text = 
+        ##############################
         start_position = None
         end_position = None
         orig_answer_text = None
@@ -274,10 +278,12 @@ def read_squad_examples(input_file, is_training):
             raise ValueError(
                 "For training, each question should have exactly 1 answer.")
           if not is_impossible:
+            #####################TO-DO 채워주세요###################
             answer = qa["answers"][0]
-            orig_answer_text = answer["text"]
-            answer_offset = answer["answer_start"]
-            answer_length = len(orig_answer_text)
+            orig_answer_text = 
+            answer_offset = 
+            answer_length = 
+            ########################################################
             start_position = char_to_word_offset[answer_offset]
             end_position = char_to_word_offset[answer_offset + answer_length -
                                                1]
@@ -324,7 +330,9 @@ def convert_examples_to_features(examples, tokenizer, max_seq_length,
   unique_id = 1000000000
 
   for (example_index, example) in enumerate(examples):
-    query_tokens = tokenizer.tokenize(example.question_text)
+    ################TO-DO 채워주세요####################
+    query_tokens = tokenizer.tokenize()
+    ####################################################
 
     if len(query_tokens) > max_query_length:
       query_tokens = query_tokens[0:max_query_length]
@@ -619,6 +627,7 @@ def model_fn_builder(bert_config, init_checkpoint, learning_rate,
 
     is_training = (mode == tf.estimator.ModeKeys.TRAIN)
 
+    """TO-DO create_model 참고"""
     (start_logits, end_logits) = create_model(
         bert_config=bert_config,
         is_training=is_training,
@@ -656,6 +665,7 @@ def model_fn_builder(bert_config, init_checkpoint, learning_rate,
     if mode == tf.estimator.ModeKeys.TRAIN:
       seq_length = modeling.get_shape_list(input_ids)[1]
 
+      """TO-Do compute_loss 참고!! 중요합니다!!!"""
       def compute_loss(logits, positions):
         one_hot_positions = tf.one_hot(
             positions, depth=seq_length, dtype=tf.float32)
@@ -1030,20 +1040,6 @@ def get_final_text(pred_text, orig_text, do_lower_case):
     return orig_text
 
   output_text = orig_text[orig_start_position:(orig_end_position + 1)]
-  ######## JAEHAK 조사를 강제로 떼주는 방식 ##########
-  def refine_output(orig_answer, pred_answer):
-    while orig_answer in pred_answer:
-      if orig_answer not in pred_answer[:-1]:
-        break
-      pred_answer = pred_answer[:-1]
-    while orig_answer in pred_answer:
-      if orig_answer not in pred_answer[1:]:
-        break
-      pred_answer = pred_answer[1:]
-    return pred_answer
-  if new_text in output_text:
-    output_text = refine_output(new_text, output_text)
-  ####################################################
   return output_text
 
 
@@ -1183,6 +1179,7 @@ def main(_):
   num_train_steps = None
   num_warmup_steps = None
   if FLAGS.do_train:
+    """TO-DO read_squad_examples()참고"""
     train_examples = read_squad_examples(
         input_file=FLAGS.train_file, is_training=True)
     num_train_steps = int(
@@ -1194,6 +1191,8 @@ def main(_):
     rng = random.Random(12345)
     rng.shuffle(train_examples)
 
+  """TO-DO model_fn 참고 
+  모델을 빌드합니다."""
   model_fn = model_fn_builder(
       bert_config=bert_config,
       init_checkpoint=FLAGS.init_checkpoint,
@@ -1215,9 +1214,11 @@ def main(_):
   if FLAGS.do_train:
     # We write to a temporary file to avoid storing very large constant tensors
     # in memory.
+    """TO-DO FeatureWriter 참고"""
     train_writer = FeatureWriter(
         filename=os.path.join(FLAGS.output_dir, "train.tf_record"),
         is_training=True)
+    """TO-DO convert_examples_to_featuers 참고"""
     convert_examples_to_features(
         examples=train_examples,
         tokenizer=tokenizer,
@@ -1299,6 +1300,7 @@ def main(_):
     output_nbest_file = os.path.join(FLAGS.output_dir, "nbest_predictions.json")
     output_null_log_odds_file = os.path.join(FLAGS.output_dir, "null_odds.json")
 
+    """TO-DO write_predictions 참고"""
     write_predictions(eval_examples, eval_features, all_results,
                       FLAGS.n_best_size, FLAGS.max_answer_length,
                       FLAGS.do_lower_case, output_prediction_file,
