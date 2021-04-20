@@ -4,7 +4,7 @@
     - 예시 : `!python csv2json.py data/dino_combined_final.csv data/KDinoQuAD_v1`
 
 2. fine-tuning 진행
-    - FLAGS를 참고하셔서 TO-DO 부분을 완성해 주세요. 
+    - FLAGS를 참고하셔서 korbert/run_squad.py의 TO-DO 부분을 완성해 주세요. 
     - run.sh 역시 빈 부분을 채워주세요.
     - `!sh run.sh` 실행해 주시면 finetuning이 시작됩니다.
 
