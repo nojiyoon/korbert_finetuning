@@ -13,8 +13,6 @@ Original file is located at
 
 - train data로는 *KorQuAD1.0* 버전의 데이터를 사용하도록 하겠습니다.
 
-- colab의 자원적 한계로 인해 *KorQuAD1.0 dev* 데이터를 사용합니다.
-
 """
 
 # 필요한 모듈 import
@@ -25,6 +23,7 @@ import wget
 import sys
 import csv
 import pandas as pd
+import random
 
 
 """## CSV 정제"""
@@ -76,7 +75,7 @@ for index, line in enumerate(lines[1:]):
   new_num = original_num - new_line_num
   line[4] = str(new_num)
   line[1] = context
-  # 만약 새로 설정한 position의 context에서의 정답과 answer_text가 불일치할 경우 제외합니다. 
+  # 만약 새로 설정한 position의 context에서의 정답과 answer_text가 불일치할 경우 제외합니다.
   if context[new_num:new_num+len(line[3])] != line[3]:
     pass
   else:
@@ -92,24 +91,17 @@ print("dino.csv saved in {}".format(output_path))
 download  dev data
 
 """
-# download KorQuAD 1.0 dev data
-###################################경로설정#########################
-url = "https://korquad.github.io/dataset/KorQuAD_v1.0_dev.json" ####
-down_path = "./data"                                                  ####
-####################################################################
-if not os.path.isfile(os.path.join(down_path, "KorQuAD_v1.0_dev.json")):
-    wget.download(url, out=down_path)                               
-
-"""load train or dev data
-
-**dev가 아닌 train을 load 해서 사용해주세요.**
-"""
+# download KorQuAD 1.0 train data
+url = "https://korquad.github.io/dataset/KorQuAD_v1.0_train.json"
+down_path = "./data"
+if not os.path.isfile(os.path.join(down_path, "KorQuAD_v1.0_train.json")):
+    wget.download(url, out=down_path)
 
 # import json module
 import json
 
 # load dev data
-with open(os.path.join(output_path, "KorQuAD_v1.0_dev.json")) as json_file:
+with open(os.path.join(output_path, "KorQuAD_v1.0_train.json")) as json_file:
   korquad_data = json.load(json_file)
 
 """convert csv to json and merge"""
@@ -131,7 +123,7 @@ for index, row in df_combine.iterrows():
   new_dict["data"][-1]["paragraphs"][-1]["qas"].append({"answers": [{"text": "", "answer_start": ""}],
                                                           "id": id_,
                                                         "question": row["question"]})
-  
+
   new_dict["data"][-1]["paragraphs"][-1]["qas"][-1]["answers"][-1]["text"] = row["answer_text"]
   new_dict["data"][-1]["paragraphs"][-1]["qas"][-1]["answers"][-1]["answer_start"] = int(row["start_position"])
 
@@ -176,18 +168,24 @@ merge_test_dict = {"version": "KDinoQuAD_v1_test", "data": []}
 korquad_train_num = int(len(korquad_data["data"]) * 0.8)
 dino_train_num = int(len(dino_data["data"]) * 0.8)
 
-korquad_dev_num = korquad_train_num + int(korquad_train_num/2)
-dino_dev_num = dino_train_num + int(dino_train_num/2)
+korquad_dev_num = korquad_train_num + int((len(korquad_data["data"])-korquad_train_num)/2)
+dino_dev_num = dino_train_num + int((len(dino_data["data"]) - dino_train_num)/2)
+
+# shuffle data
+shuffled_korquad_data = korquad_data["data"]
+shuffled_dino_data = dino_data["data"]
+random.shuffle(shuffled_korquad_data)
+random.shuffle(shuffled_dino_data)
 
 # merge
-merge_train_dict["data"].extend(korquad_data["data"][:korquad_train_num]) # korquad 추가
-merge_train_dict["data"].extend(dino_data["data"][:dino_train_num]) # dino 추가
+merge_train_dict["data"].extend(shuffled_korquad_data[:korquad_train_num]) # korquad 추가
+merge_train_dict["data"].extend(shuffled_dino_data[:dino_train_num]) # dino 추가
 
-merge_dev_dict["data"].extend(korquad_data["data"][korquad_train_num:korquad_dev_num]) # korquad 추가
-merge_dev_dict["data"].extend(dino_data["data"][dino_train_num:dino_dev_num]) # dino 추가
+merge_dev_dict["data"].extend(shuffled_korquad_data[korquad_train_num:korquad_dev_num]) # korquad 추가
+merge_dev_dict["data"].extend(shuffled_dino_data[dino_train_num:dino_dev_num]) # dino 추가
 
-merge_test_dict["data"].extend(korquad_data["data"][korquad_dev_num:]) # korquad 추가
-merge_test_dict["data"].extend(dino_data["data"][dino_dev_num:]) # dino 추가
+merge_test_dict["data"].extend(shuffled_korquad_data[korquad_dev_num:]) # korquad 추가
+merge_test_dict["data"].extend(shuffled_dino_data[dino_dev_num:]) # dino 추가
 
 # 저장
 with open(output_file + "_train.json", "w") as f:
