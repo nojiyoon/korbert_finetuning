@@ -30,6 +30,7 @@ from korbert import optimization
 from korbert import tokenization_morp as tokenization
 import six
 import tensorflow as tf
+import re
 
 flags = tf.flags
 
