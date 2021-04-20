@@ -913,7 +913,19 @@ def write_predictions(all_examples, all_features, all_results, n_best_size,
     assert len(nbest_json) >= 1
 
     if not FLAGS.version_2_with_negative:
-      all_predictions[example.qas_id] = nbest_json[0]["text"]
+      ################ 강제로 조사 분리 ##################
+      def remove_josa(output):
+        new_output = output
+        josa = re.compile("이고|이라|처럼|이란|으로|이며")
+        if new_output[-1] in "을를이가은는의에로":
+          new_output = new_output[:-1]
+        if re.findall(josa, new_output[-2:]):
+          new_output = new_output[:-2]
+        return new_output
+      new_answer = remove_josa(nbest_json[0]["text"])
+      all_predictions[example.qas_id] = new_answer
+      #######################################################
+      #all_predictions[example.qas_id] = nbest_json[0]["text"]
     else:
       # predict "" iff the null score - the score of best non-null > threshold
       score_diff = score_null - best_non_null_entry.start_logit - (
@@ -1030,20 +1042,7 @@ def get_final_text(pred_text, orig_text, do_lower_case):
     return orig_text
 
   output_text = orig_text[orig_start_position:(orig_end_position + 1)]
-  ######## JAEHAK 조사를 강제로 떼주는 방식 ##########
-  #def refine_output(orig_answer, pred_answer):
-  #  while orig_answer in pred_answer:
-  #    if orig_answer not in pred_answer[:-1]:
-  #      break
-  #    pred_answer = pred_answer[:-1]
-  #  while orig_answer in pred_answer:
-  #    if orig_answer not in pred_answer[1:]:
-  #      break
-  #    pred_answer = pred_answer[1:]
-  #  return pred_answer
-  #if orig_text in output_text:
-  #  output_text = refine_output(orig_text, output_text)
-  ####################################################
+
   return output_text
 
 
